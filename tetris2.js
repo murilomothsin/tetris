@@ -31,10 +31,67 @@ class Canvas {
 
 }
 
+class Player {
+  constructor() {
+    this.pos = {
+        x: 0,
+        y: 0
+      }
+    this.matrix = null
+    this.score = 0
+  }
+}
+
 class Game {
   constructor() {
-    this.matrix = this.createMatrix()
+    this.arena = this.createMatrix()
     this.pieces = this.createPieces()
+    this.player = new Player()
+  }
+
+  arenaSweep() {
+    let rowCount = 1;
+    outer: for (let y = this.arena.length - 1; y > 0; --y) {
+      for (let x = 0; x < this.arena[y].length; ++x) {
+        if (this.arena[y][x] === 0) {
+          continue outer;
+        }
+      }
+
+      const row = this.arena.splice(y, 1)[0].fill(0);
+      this.arena.unshift(row);
+      ++y;
+
+      player.score += rowCount * 10;
+      rowCount *= 2;
+    }
+  }
+
+  newPiece() {
+    const pieces = 'TJLOSZI';
+    this.player.matrix = this.pieces[(pieces[pieces.length * Math.random() | 0])];
+    this.player.pos.y = 0;
+    this.player.pos.x = (this.arena[0].length / 2 | 0) - (this.player.matrix[0].length / 2 | 0);
+    if (this.collide(this.arena, this.player)) {
+      this.arena.forEach(row => row.fill(0));
+      this.player.score = 0;
+      this.updateScore();
+    }
+  }
+
+  collide(arena, player) {
+    const m = player.matrix;
+    const o = player.pos;
+    for (let y = 0; y < m.length; ++y) {
+      for (let x = 0; x < m[y].length; ++x) {
+        if (m[y][x] !== 0 &&
+          (arena[y + o.y] &&
+            arena[y + o.y][x + o.x]) !== 0) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   createPieces() {
