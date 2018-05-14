@@ -1,7 +1,7 @@
 class Canvas {
-  constructor(canvas, context) {
+  constructor(canvas) {
     this.canvas = canvas
-    this.context = context
+    this.context = canvas.getContext('2d')
     context.scale(20, 20)
   }
 
@@ -47,6 +47,7 @@ class Game {
     this.arena = this.createMatrix()
     this.pieces = this.createPieces()
     this.player = new Player()
+    this.canvas = new Canvas(document.getElementById('tetris'))
   }
 
   arenaSweep() {
@@ -64,6 +65,47 @@ class Game {
 
       player.score += rowCount * 10;
       rowCount *= 2;
+    }
+  }
+
+  update(time = 0) {
+    const deltaTime = time - this.lastTime;
+
+    this.dropCounter += deltaTime;
+    if (this.dropCounter > this.dropInterval) {
+      this.playerDrop();
+    }
+
+    this.lastTime = time;
+
+    this.canvas.drawBoard();
+    requestAnimationFrame(update);
+  }
+
+  playerDrop() {
+    this.player.pos.y++;
+    if (this.collide(this.arena, this.player)) {
+      this.player.pos.y--;
+      this.merge(this.arena, this.player);
+      this.playerReset();
+      this.arenaSweep();
+      this.updateScore();
+    }
+    this.dropCounter = 0;
+  }
+
+  playerRotate(dir) {
+    const pos = this.player.pos.x;
+    let offset = 1;
+    this.rotate(this.player.matrix, dir);
+    while (this.collide(arena, this.player)) {
+      this.player.pos.x += offset;
+      offset = -(offset + (offset > 0 ? 1 : -1));
+      if (offset > this.player.matrix[0].length) {
+        this.rotate(this.player.matrix, -dir);
+        this.player.pos.x = pos;
+        return;
+      }
     }
   }
 
@@ -92,6 +134,36 @@ class Game {
       }
     }
     return false;
+  }
+
+  merge(arena, player) {
+    player.matrix.forEach((row, y) => {
+      row.forEach((value, x) => {
+        if (value !== 0) {
+          arena[y + player.pos.y][x + player.pos.x] = value;
+        }
+      });
+    });
+  }
+
+  rotate(matrix, dir) {
+    for (let y = 0; y < matrix.length; ++y) {
+      for (let x = 0; x < y; ++x) {
+        [
+          matrix[x][y],
+          matrix[y][x],
+        ] = [
+            matrix[y][x],
+            matrix[x][y],
+          ];
+      }
+    }
+
+    if (dir > 0) {
+      matrix.forEach(row => row.reverse());
+    } else {
+      matrix.reverse();
+    }
   }
 
   createPieces() {
